@@ -53,8 +53,8 @@ Measured on Railway (2026-11-24, after login, app creation, table, attachment an
 
 | Service | Idle RAM | CPU idle |
 |---|---|---|
-| Apps | 1.56 GB (peak 1.95) | < 0.01 vCPU |
-| LiteLLM | 1.6 GB with 2 workers; template default is 1 worker (~0.8 GB) | < 0.02 |
+| Apps | 1.40–1.56 GB (peak 1.95) | < 0.01 vCPU |
+| LiteLLM | 0.62 GB with the template's 1 worker (1.6 GB with 2) | < 0.01 |
 | CouchDB (CouchDB + Clouseau + SQS) | 0.66–0.81 GB | 0.03 |
 | Worker | 0.31 GB | < 0.01 |
 | Files (SeaweedFS) | 0.09–0.2 GB | < 0.01 |
@@ -62,7 +62,7 @@ Measured on Railway (2026-11-24, after login, app creation, table, attachment an
 | Budibase proxy | 0.04 GB | < 0.01 |
 | Redis | 0.01 GB | < 0.01 |
 
-Total ≈ 3.9 GB idle with one LiteLLM worker → ≈ $40/month idle RAM plus volumes. **Minimum plan: Hobby** (Apps alone exceeds Trial's 1 GB per service).
+Total ≈ 3.7 GB idle → ≈ $37/month idle RAM plus volumes. **Minimum plan: Hobby** (Apps alone exceeds Trial's 1 GB per service).
 
 ## Verification checklist
 

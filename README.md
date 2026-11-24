@@ -57,7 +57,7 @@ Each process runs as its own Railway service, as in upstream's compose file, so 
 
 **Scaling and versions.** Apps and Worker are stateless and can get replicas. Images are pinned by digest in the template and in `services/*/Dockerfile`. To upgrade, move Apps, Worker and Proxy to the same new 4.x release together, back up the CouchDB volume and redeploy.
 
-**Resources.** Measured idle on Railway: Apps 1.6 GB, LiteLLM 0.8 GB (one worker), CouchDB 0.7–0.8 GB, Worker 0.3 GB, the rest under 0.2 GB each; about 3.9 GB in total, roughly $40–50 per month. The apps service needs more than the Trial plan's 1 GB per service, so use the Hobby plan or higher.
+**Resources.** Measured idle on Railway: Apps 1.4–1.6 GB, LiteLLM 0.6 GB, CouchDB 0.7–0.8 GB, Worker 0.3 GB, the rest under 0.2 GB each; about 3.7 GB in total, roughly $37–50 per month. The apps service needs more than the Trial plan's 1 GB per service, so use the Hobby plan or higher.
 
 **License.** Budibase's server and worker are GPL-3.0 and its client packages MPL-2.0; paid features in `packages/pro` are under the Business Source License and need a Budibase license key. LiteLLM is MIT (enterprise folder excepted), SeaweedFS Apache-2.0. This is a community template; it is not affiliated with Budibase.
 
