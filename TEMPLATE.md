@@ -36,7 +36,7 @@ All three put every process in one container (1.2 GB compressed image, several G
 ## Design
 
 1. **Upstream's compose layout, one process per service**, so each fits 1 GB (STANDARD 8.31) instead of the all-in-one image.
-2. **No MinIO:** Budibase's S3 client always uses path-style requests (`forcePathStyle: true`), which Railway Buckets reject; SeaweedFS with a single full-access identity replaces it. Budibase creates its buckets itself. Signed file URLs keep working through the proxy's `/files/signed/` route (signed for host `minio-service`, forwarded with that Host header).
+2. **No MinIO:** Budibase's S3 client always uses path-style requests (`forcePathStyle: true`), which Railway Buckets reject; SeaweedFS with a single full-access identity replaces it. Budibase creates its buckets itself. Signed file URLs go through the proxy's `/files/signed/` route (signed for host `minio-service`, forwarded with that Host header). Railway's edge adds `X-Forwarded-Host/Port`, which SeaweedFS prefers for SigV4 host checks (first test: `SignatureDoesNotMatch`), so the proxy image clears both headers on that route.
 3. **Proxy DNS:** upstream's nginx uses Docker's `127.0.0.11` resolver. A sourced `05-railway-resolver.envsh` sets `RESOLVER` from `/etc/resolv.conf` (bracketed for IPv6) before the config template is rendered. nginx keeps `ipv6=off`, i.e. it uses the IPv4 private addresses new Railway environments provide.
 4. **Admin from variables:** `BB_ADMIN_USER_EMAIL` (required) / `BB_ADMIN_USER_PASSWORD` (generated); the apps service creates the account on start (`packages/server/src/startup`).
 5. **LiteLLM** reuses our LiteLLM service (Postgres-backed model store, Redis router state); Budibase manages models with the master key.
