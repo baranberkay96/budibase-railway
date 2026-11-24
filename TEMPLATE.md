@@ -35,7 +35,7 @@ All three put every process in one container (1.2 GB compressed image, several G
 
 ## Design
 
-1. **Upstream's compose layout, one process per service**, so each fits 1 GB (STANDARD 8.31) instead of the all-in-one image.
+1. **Upstream's compose layout, one process per service** instead of the all-in-one image. Measured: Apps (~1.6 GB) and LiteLLM need more than Trial's 1 GB (STANDARD 8.31), so Hobby is required; the README says so.
 2. **No MinIO:** Budibase's S3 client always uses path-style requests (`forcePathStyle: true`), which Railway Buckets reject; SeaweedFS with a single full-access identity replaces it. Budibase creates its buckets itself. Signed file URLs go through the proxy's `/files/signed/` route (signed for host `minio-service`, forwarded with that Host header). Railway's edge adds `X-Forwarded-Host/Port`, which SeaweedFS prefers for SigV4 host checks (first test: `SignatureDoesNotMatch`), so the proxy image clears both headers on that route.
 3. **Proxy DNS:** upstream's nginx uses Docker's `127.0.0.11` resolver. A sourced `05-railway-resolver.envsh` sets `RESOLVER` from `/etc/resolv.conf` (bracketed for IPv6) before the config template is rendered. nginx keeps `ipv6=off`, i.e. it uses the IPv4 private addresses new Railway environments provide.
 4. **Admin from variables:** `BB_ADMIN_USER_EMAIL` (required) / `BB_ADMIN_USER_PASSWORD` (generated); the apps service creates the account on start (`packages/server/src/startup`).
@@ -45,18 +45,32 @@ All three put every process in one container (1.2 GB compressed image, several G
 
 - Multi-service production layout with healthchecks on every web service; pinned digests.
 - No MinIO; no public CouchDB/Redis; admin created from variables.
-- Fits Trial's per-service memory limit (see measurements).
+- One process per service, so each can be sized and scaled on its own (note: Apps and LiteLLM need more than Trial's 1 GB, see Resources).
 
 ## Resources
 
-To be measured on the test deploy (see the report).
+Measured on Railway (2026-11-24, after login, app creation, table, attachment and publish):
+
+| Service | Idle RAM | CPU idle |
+|---|---|---|
+| Apps | 1.56 GB (peak 1.95) | < 0.01 vCPU |
+| LiteLLM | 1.6 GB with 2 workers; template default is 1 worker (~0.8 GB) | < 0.02 |
+| CouchDB (CouchDB + Clouseau + SQS) | 0.66–0.81 GB | 0.03 |
+| Worker | 0.31 GB | < 0.01 |
+| Files (SeaweedFS) | 0.09–0.2 GB | < 0.01 |
+| Postgres | 0.11–0.15 GB | < 0.01 |
+| Budibase proxy | 0.04 GB | < 0.01 |
+| Redis | 0.01 GB | < 0.01 |
+
+Total ≈ 3.9 GB idle with one LiteLLM worker → ≈ $40/month idle RAM plus volumes. **Minimum plan: Hobby** (Apps alone exceeds Trial's 1 GB per service).
 
 ## Verification checklist
 
-- [ ] All services SUCCESS; `/health` 200 on the public URL.
-- [ ] Admin login; create an app with a table and a row; publish it; open the published app.
-- [ ] Upload an attachment (Files), download through a signed URL.
-- [ ] Odd values (bad admin e-mail) do not fail the deploy.
+- [x] All 8 services SUCCESS on the first deploy; proxy `/health` 200, `/builder` 200.
+- [x] Admin login with `BB_ADMIN_USER_*` (global admin + builder); stranger `/api/global/users/init` 403 ("cannot initialise once a global user has been created").
+- [x] App created via API, table with attachment column, row inserted, app published (`SUCCESS`), published app `/app/railway-test` 200.
+- [x] Attachment stored in SeaweedFS; signed URL via `/files/signed/` 200 with matching bytes after the X-Forwarded fix (first try 403 `SignatureDoesNotMatch`); unsigned object and bucket listing via the proxy 403.
+- [x] Odd values (`BB_ADMIN_USER_EMAIL=Not An Email`, `BB_ADMIN_USER_PASSWORD=abc`): Apps SUCCESS.
 
 ## Open questions
 

@@ -456,13 +456,13 @@
           "required": false
         },
         "HOST": {
-          "defaultValue": "::",
-          "description": "Dual-stack bind (two workers).",
+          "defaultValue": "0.0.0.0",
+          "description": "Bind address. A single uvicorn worker on :: is IPv6-only (STANDARD 8.2), so IPv4 here.",
           "required": false
         },
         "NUM_WORKERS": {
-          "defaultValue": "2",
-          "description": "Uvicorn worker processes.",
+          "defaultValue": "1",
+          "description": "Uvicorn worker processes (each ~0.8 GB; raise for heavy AI traffic and set HOST=:: when above 1).",
           "required": false
         },
         "DATABASE_URL": {

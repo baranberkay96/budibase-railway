@@ -6,7 +6,7 @@ Budibase is a low-code platform for internal tools: build forms, dashboards, por
 
 Budibase splits work between an apps service (builder, app runtime, automations), a worker (users, authentication, tenancy, e-mail) and an nginx proxy that routes the public URL to both. Apps and data live in CouchDB, which upstream ships with Lucene search and an SQL layer; Redis holds sessions and queues, and uploaded files and app assets go to an S3-compatible store. Budibase 4 talks to AI providers through a LiteLLM gateway with its own Postgres database.
 
-Each process runs as its own Railway service, so every one fits a 1 GB plan limit, unlike the single all-in-one image. Budibase forces path-style S3 requests, which Railway Buckets reject, so SeaweedFS replaces upstream's MinIO. The admin account is created from your variables on the first start.
+Each process runs as its own Railway service, as in upstream's compose file, so services can be sized and scaled independently. Budibase forces path-style S3 requests, which Railway Buckets reject, so SeaweedFS replaces upstream's MinIO. The admin account is created from your variables on the first start.
 
 ## Common Use Cases
 
@@ -57,7 +57,7 @@ Each process runs as its own Railway service, so every one fits a 1 GB plan limi
 
 **Scaling and versions.** Apps and Worker are stateless and can get replicas. Images are pinned by digest in the template and in `services/*/Dockerfile`. To upgrade, move Apps, Worker and Proxy to the same new 4.x release together, back up the CouchDB volume and redeploy.
 
-**Resources.** Measured idle RAM is in TEMPLATE.md in the repository.
+**Resources.** Measured idle on Railway: Apps 1.6 GB, LiteLLM 0.8 GB (one worker), CouchDB 0.7–0.8 GB, Worker 0.3 GB, the rest under 0.2 GB each; about 3.9 GB in total, roughly $40–50 per month. The apps service needs more than the Trial plan's 1 GB per service, so use the Hobby plan or higher.
 
 **License.** Budibase's server and worker are GPL-3.0 and its client packages MPL-2.0; paid features in `packages/pro` are under the Business Source License and need a Budibase license key. LiteLLM is MIT (enterprise folder excepted), SeaweedFS Apache-2.0. This is a community template; it is not affiliated with Budibase.
 
