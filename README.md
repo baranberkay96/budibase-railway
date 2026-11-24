@@ -1,5 +1,7 @@
 # Deploy and Host Budibase with Railway
 
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/budibase-41-low-code-app-builder-couchdb?referralCode=20H68q)
+
 Budibase is a low-code platform for internal tools: build forms, dashboards, portals and approval apps on top of its built-in database or your own SQL, REST and Google Sheets sources, then add automations and AI agents. This template runs Budibase 4.1 as upstream's multi-service stack: proxy, apps service, worker, CouchDB with search and SQL, Redis, an S3 file store and the LiteLLM AI gateway.
 
 ## About Hosting Budibase
