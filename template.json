@@ -1,0 +1,655 @@
+{
+  "name": "Budibase 4.1 Low-Code App Builder (CouchDB, Redis, LiteLLM, S3)",
+  "idSeed": "Budibase 4.1 Low-Code App Builder (CouchDB, Redis, LiteLLM, S3)",
+  "description": "Low-code internal tools: apps, worker, CouchDB, AI gateway, file store.",
+  "category": "Other",
+  "tags": [
+    "budibase",
+    "low-code",
+    "internal-tools",
+    "app-builder",
+    "couchdb",
+    "redis",
+    "litellm",
+    "self-hosted"
+  ],
+  "image": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/budibase.svg",
+  "upstream": {
+    "repo": "Budibase/budibase",
+    "version": "4.1.0",
+    "license": "GPL-3.0 (server/worker), MPL-2.0 (client packages), BSL 1.1 (packages/pro)",
+    "images": {
+      "apps": "budibase/apps:v4.1.0@sha256:fb01af5c41d0b1e551fdf133a6201a879ea7df7a370c3cb908e67be562da6209 (released 2026-11-23)",
+      "worker": "budibase/worker:v4.1.0@sha256:6f6b82131e20e046201595255b9aafb09acc4c95ba26ddedac0c9714c46d90ff",
+      "proxy": "budibase/proxy:v4.1.0@sha256:ab4d98d9e5ab4b9e1a4144b66f9827dd28bb19d4e36f90eaf98412118af80f30",
+      "couchdb": "budibase/database:2.1.0@sha256:d90f656261c9fdccae7f15e73639103bf857b2897f105c4f81711ecd1234dd28",
+      "files": "chrislusf/seaweedfs:4.53@sha256:ccad23e18639c8b98cee17e7100b95830a06077b56d8e5b006d6dcf8ec5e94a0",
+      "litellm": "ghcr.io/berriai/litellm-database:v1.104.2",
+      "postgres": "ghcr.io/railwayapp-templates/postgres-ssl:18.6@sha256:4fc833b43d2aaf6ecc9b18615f5533602b723a32d0e2efe2dae8ca0f7217c863",
+      "redis": "redis:8.2.11@sha256:b0b01167ff47bc3868e56a967895a26be4230891a1f42a78ab61cdd227accc8d"
+    },
+    "checked": "2026-11-24"
+  },
+  "services": {
+    "Budibase": {
+      "icon": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/budibase.svg",
+      "source": {
+        "repo": "baranberkay96/budibase-railway",
+        "rootDirectory": "/services/proxy"
+      },
+      "startCommand": null,
+      "preDeployCommand": null,
+      "healthcheckPath": "/health",
+      "healthcheckTimeout": 600,
+      "restartPolicyType": "ALWAYS",
+      "numReplicas": 1,
+      "cronSchedule": null,
+      "publicDomain": true,
+      "targetPort": 10000,
+      "tcpProxy": null,
+      "volume": null,
+      "variables": {
+        "PORT": {
+          "defaultValue": "10000",
+          "description": "nginx port (public domain and healthcheck).",
+          "required": false
+        },
+        "APPS_UPSTREAM_URL": {
+          "defaultValue": "http://${{Apps.RAILWAY_PRIVATE_DOMAIN}}:4002",
+          "description": "Apps service (private network).",
+          "required": false
+        },
+        "WORKER_UPSTREAM_URL": {
+          "defaultValue": "http://${{Worker.RAILWAY_PRIVATE_DOMAIN}}:4003",
+          "description": "Worker service (private network).",
+          "required": false
+        },
+        "MINIO_UPSTREAM_URL": {
+          "defaultValue": "http://${{Files.RAILWAY_PRIVATE_DOMAIN}}:8333",
+          "description": "Object store for signed file URLs (private network).",
+          "required": false
+        },
+        "COUCHDB_UPSTREAM_URL": {
+          "defaultValue": "http://${{CouchDB.RAILWAY_PRIVATE_DOMAIN}}:5984",
+          "description": "CouchDB (private network).",
+          "required": false
+        },
+        "PROXY_RATE_LIMIT_WEBHOOKS_PER_SECOND": {
+          "defaultValue": "10",
+          "description": "Webhook rate limit per client.",
+          "required": false
+        },
+        "PROXY_RATE_LIMIT_API_PER_SECOND": {
+          "defaultValue": "50",
+          "description": "API rate limit per client.",
+          "required": false
+        }
+      }
+    },
+    "Apps": {
+      "icon": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/budibase.svg",
+      "source": {
+        "image": "budibase/apps:v4.1.0@sha256:fb01af5c41d0b1e551fdf133a6201a879ea7df7a370c3cb908e67be562da6209"
+      },
+      "startCommand": null,
+      "preDeployCommand": null,
+      "healthcheckPath": "/health",
+      "healthcheckTimeout": 1200,
+      "restartPolicyType": "ALWAYS",
+      "numReplicas": 1,
+      "cronSchedule": null,
+      "publicDomain": false,
+      "targetPort": null,
+      "tcpProxy": null,
+      "volume": null,
+      "variables": {
+        "PORT": {
+          "defaultValue": "4002",
+          "description": "Apps service port.",
+          "required": false
+        },
+        "WORKER_URL": {
+          "defaultValue": "http://${{Worker.RAILWAY_PRIVATE_DOMAIN}}:4003",
+          "description": "Worker service (private network).",
+          "required": false
+        },
+        "BB_ADMIN_USER_EMAIL": {
+          "defaultValue": "",
+          "description": "E-mail of the admin account, created on the first start.",
+          "required": true
+        },
+        "BB_ADMIN_USER_PASSWORD": {
+          "defaultValue": "${{secret(24, \"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789\")}}",
+          "description": "Password of the admin account. Change it in the app after the first login.",
+          "required": false
+        },
+        "RAILWAY_DEPLOYMENT_DRAINING_SECONDS": {
+          "defaultValue": "30",
+          "description": "Grace period on redeploy.",
+          "required": false
+        },
+        "SELF_HOSTED": {
+          "defaultValue": "1",
+          "description": "Self-hosted mode.",
+          "required": false
+        },
+        "BUDIBASE_ENVIRONMENT": {
+          "defaultValue": "PRODUCTION",
+          "description": "Runtime environment.",
+          "required": false
+        },
+        "JWT_SECRET": {
+          "defaultValue": "${{secret(48, \"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789\")}}",
+          "description": "Signs sessions. Shared by Apps and Worker.",
+          "required": false
+        },
+        "API_ENCRYPTION_KEY": {
+          "defaultValue": "${{secret(48, \"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789\")}}",
+          "description": "Encrypts stored datasource credentials. Do not change after first use.",
+          "required": false
+        },
+        "INTERNAL_API_KEY": {
+          "defaultValue": "${{secret(48, \"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789\")}}",
+          "description": "Key Apps and Worker use to call each other.",
+          "required": false
+        },
+        "COUCH_DB_URL": {
+          "defaultValue": "http://${{CouchDB.COUCHDB_USER}}:${{CouchDB.COUCHDB_PASSWORD}}@${{CouchDB.RAILWAY_PRIVATE_DOMAIN}}:5984",
+          "description": "CouchDB (private network).",
+          "required": false
+        },
+        "COUCH_DB_SQL_URL": {
+          "defaultValue": "http://${{CouchDB.RAILWAY_PRIVATE_DOMAIN}}:4984",
+          "description": "SQS (SQL over CouchDB) in the CouchDB service.",
+          "required": false
+        },
+        "MINIO_URL": {
+          "defaultValue": "http://${{Files.RAILWAY_PRIVATE_DOMAIN}}:8333",
+          "description": "Object store (S3 API, private network).",
+          "required": false
+        },
+        "MINIO_ACCESS_KEY": {
+          "defaultValue": "${{Files.MINIO_ACCESS_KEY}}",
+          "description": "Object store access key.",
+          "required": false
+        },
+        "MINIO_SECRET_KEY": {
+          "defaultValue": "${{Files.MINIO_SECRET_KEY}}",
+          "description": "Object store secret key.",
+          "required": false
+        },
+        "REDIS_URL": {
+          "defaultValue": "${{Redis.RAILWAY_PRIVATE_DOMAIN}}:6379",
+          "description": "Redis host:port (private network).",
+          "required": false
+        },
+        "REDIS_PASSWORD": {
+          "defaultValue": "${{Redis.REDIS_PASSWORD}}",
+          "description": "Redis password.",
+          "required": false
+        },
+        "LITELLM_URL": {
+          "defaultValue": "http://${{LiteLLM.RAILWAY_PRIVATE_DOMAIN}}:4000",
+          "description": "LiteLLM AI gateway (private network).",
+          "required": false
+        },
+        "LITELLM_MASTER_KEY": {
+          "defaultValue": "${{LiteLLM.LITELLM_MASTER_KEY}}",
+          "description": "LiteLLM master key.",
+          "required": false
+        },
+        "PLATFORM_URL": {
+          "defaultValue": "https://${{Budibase.RAILWAY_PUBLIC_DOMAIN}}",
+          "description": "Public URL used in links and e-mails. Change it when you add a custom domain.",
+          "required": false
+        },
+        "ENABLE_ANALYTICS": {
+          "defaultValue": "false",
+          "description": "Turn off product analytics.",
+          "required": false
+        },
+        "LOG_LEVEL": {
+          "defaultValue": "info",
+          "description": "Log level.",
+          "required": false
+        }
+      }
+    },
+    "Worker": {
+      "icon": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/budibase.svg",
+      "source": {
+        "image": "budibase/worker:v4.1.0@sha256:6f6b82131e20e046201595255b9aafb09acc4c95ba26ddedac0c9714c46d90ff"
+      },
+      "startCommand": null,
+      "preDeployCommand": null,
+      "healthcheckPath": "/health",
+      "healthcheckTimeout": 1200,
+      "restartPolicyType": "ALWAYS",
+      "numReplicas": 1,
+      "cronSchedule": null,
+      "publicDomain": false,
+      "targetPort": null,
+      "tcpProxy": null,
+      "volume": null,
+      "variables": {
+        "PORT": {
+          "defaultValue": "4003",
+          "description": "Worker service port.",
+          "required": false
+        },
+        "CLUSTER_PORT": {
+          "defaultValue": "443",
+          "description": "Public HTTPS port behind Railway's edge.",
+          "required": false
+        },
+        "APPS_URL": {
+          "defaultValue": "http://${{Apps.RAILWAY_PRIVATE_DOMAIN}}:4002",
+          "description": "Apps service (private network).",
+          "required": false
+        },
+        "COUCH_DB_USERNAME": {
+          "defaultValue": "${{CouchDB.COUCHDB_USER}}",
+          "description": "CouchDB user.",
+          "required": false
+        },
+        "COUCH_DB_PASSWORD": {
+          "defaultValue": "${{CouchDB.COUCHDB_PASSWORD}}",
+          "description": "CouchDB password.",
+          "required": false
+        },
+        "SELF_HOSTED": {
+          "defaultValue": "${{Apps.SELF_HOSTED}}",
+          "description": "Self-hosted mode.",
+          "required": false
+        },
+        "BUDIBASE_ENVIRONMENT": {
+          "defaultValue": "${{Apps.BUDIBASE_ENVIRONMENT}}",
+          "description": "Runtime environment.",
+          "required": false
+        },
+        "JWT_SECRET": {
+          "defaultValue": "${{Apps.JWT_SECRET}}",
+          "description": "Signs sessions. Shared by Apps and Worker.",
+          "required": false
+        },
+        "API_ENCRYPTION_KEY": {
+          "defaultValue": "${{Apps.API_ENCRYPTION_KEY}}",
+          "description": "Encrypts stored datasource credentials. Do not change after first use.",
+          "required": false
+        },
+        "INTERNAL_API_KEY": {
+          "defaultValue": "${{Apps.INTERNAL_API_KEY}}",
+          "description": "Key Apps and Worker use to call each other.",
+          "required": false
+        },
+        "COUCH_DB_URL": {
+          "defaultValue": "${{Apps.COUCH_DB_URL}}",
+          "description": "CouchDB (private network).",
+          "required": false
+        },
+        "COUCH_DB_SQL_URL": {
+          "defaultValue": "${{Apps.COUCH_DB_SQL_URL}}",
+          "description": "SQS (SQL over CouchDB) in the CouchDB service.",
+          "required": false
+        },
+        "MINIO_URL": {
+          "defaultValue": "${{Apps.MINIO_URL}}",
+          "description": "Object store (S3 API, private network).",
+          "required": false
+        },
+        "MINIO_ACCESS_KEY": {
+          "defaultValue": "${{Apps.MINIO_ACCESS_KEY}}",
+          "description": "Object store access key.",
+          "required": false
+        },
+        "MINIO_SECRET_KEY": {
+          "defaultValue": "${{Apps.MINIO_SECRET_KEY}}",
+          "description": "Object store secret key.",
+          "required": false
+        },
+        "REDIS_URL": {
+          "defaultValue": "${{Apps.REDIS_URL}}",
+          "description": "Redis host:port (private network).",
+          "required": false
+        },
+        "REDIS_PASSWORD": {
+          "defaultValue": "${{Apps.REDIS_PASSWORD}}",
+          "description": "Redis password.",
+          "required": false
+        },
+        "LITELLM_URL": {
+          "defaultValue": "${{Apps.LITELLM_URL}}",
+          "description": "LiteLLM AI gateway (private network).",
+          "required": false
+        },
+        "LITELLM_MASTER_KEY": {
+          "defaultValue": "${{Apps.LITELLM_MASTER_KEY}}",
+          "description": "LiteLLM master key.",
+          "required": false
+        },
+        "PLATFORM_URL": {
+          "defaultValue": "${{Apps.PLATFORM_URL}}",
+          "description": "Public URL used in links and e-mails. Change it when you add a custom domain.",
+          "required": false
+        },
+        "ENABLE_ANALYTICS": {
+          "defaultValue": "${{Apps.ENABLE_ANALYTICS}}",
+          "description": "Turn off product analytics.",
+          "required": false
+        },
+        "LOG_LEVEL": {
+          "defaultValue": "${{Apps.LOG_LEVEL}}",
+          "description": "Log level.",
+          "required": false
+        }
+      }
+    },
+    "CouchDB": {
+      "icon": "https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/couchdb.svg",
+      "source": {
+        "image": "budibase/database:2.1.0@sha256:d90f656261c9fdccae7f15e73639103bf857b2897f105c4f81711ecd1234dd28"
+      },
+      "startCommand": null,
+      "preDeployCommand": null,
+      "healthcheckPath": "/_up",
+      "healthcheckTimeout": 900,
+      "restartPolicyType": "ALWAYS",
+      "numReplicas": 1,
+      "cronSchedule": null,
+      "publicDomain": false,
+      "targetPort": null,
+      "tcpProxy": null,
+      "volume": {
+        "mountPath": "/data"
+      },
+      "variables": {
+        "PORT": {
+          "defaultValue": "5984",
+          "description": "CouchDB port (healthcheck).",
+          "required": false
+        },
+        "COUCHDB_USER": {
+          "defaultValue": "budibase",
+          "description": "CouchDB admin user.",
+          "required": false
+        },
+        "COUCHDB_PASSWORD": {
+          "defaultValue": "${{secret(32, \"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789\")}}",
+          "description": "CouchDB admin password.",
+          "required": false
+        },
+        "COUCHDB_ERLANG_COOKIE": {
+          "defaultValue": "${{secret(32, \"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789\")}}",
+          "description": "Erlang distribution cookie.",
+          "required": false
+        },
+        "TARGETBUILD": {
+          "defaultValue": "docker-compose",
+          "description": "Budibase CouchDB layout (data under /data).",
+          "required": false
+        },
+        "DATA_DIR": {
+          "defaultValue": "/data",
+          "description": "Data directory (volume).",
+          "required": false
+        }
+      }
+    },
+    "Files": {
+      "icon": "https://cdn.jsdelivr.net/gh/selfhst/icons@main/svg/seaweedfs.svg",
+      "source": {
+        "repo": "baranberkay96/budibase-railway",
+        "rootDirectory": "/services/files"
+      },
+      "startCommand": null,
+      "preDeployCommand": null,
+      "healthcheckPath": "/healthz",
+      "healthcheckTimeout": 300,
+      "restartPolicyType": "ALWAYS",
+      "numReplicas": 1,
+      "cronSchedule": null,
+      "publicDomain": false,
+      "targetPort": null,
+      "tcpProxy": null,
+      "volume": {
+        "mountPath": "/data"
+      },
+      "variables": {
+        "PORT": {
+          "defaultValue": "8333",
+          "description": "S3 API port.",
+          "required": false
+        },
+        "MINIO_ACCESS_KEY": {
+          "defaultValue": "${{secret(20, \"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789\")}}",
+          "description": "Object store access key used by Apps and Worker.",
+          "required": false
+        },
+        "MINIO_SECRET_KEY": {
+          "defaultValue": "${{secret(40, \"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789\")}}",
+          "description": "Object store secret key used by Apps and Worker.",
+          "required": false
+        }
+      }
+    },
+    "LiteLLM": {
+      "icon": "https://cdn.jsdelivr.net/gh/selfhst/icons@main/svg/litellm.svg",
+      "source": {
+        "repo": "baranberkay96/budibase-railway",
+        "rootDirectory": "/services/litellm"
+      },
+      "startCommand": null,
+      "preDeployCommand": null,
+      "healthcheckPath": "/health/readiness",
+      "healthcheckTimeout": 900,
+      "restartPolicyType": "ALWAYS",
+      "numReplicas": 1,
+      "cronSchedule": null,
+      "publicDomain": false,
+      "targetPort": null,
+      "tcpProxy": null,
+      "volume": null,
+      "variables": {
+        "PORT": {
+          "defaultValue": "4000",
+          "description": "LiteLLM port.",
+          "required": false
+        },
+        "HOST": {
+          "defaultValue": "::",
+          "description": "Dual-stack bind (two workers).",
+          "required": false
+        },
+        "NUM_WORKERS": {
+          "defaultValue": "2",
+          "description": "Uvicorn worker processes.",
+          "required": false
+        },
+        "DATABASE_URL": {
+          "defaultValue": "${{Postgres.DATABASE_URL}}",
+          "description": "LiteLLM database (models, keys, spend).",
+          "required": false
+        },
+        "LITELLM_MASTER_KEY": {
+          "defaultValue": "sk-${{secret(48, \"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789\")}}",
+          "description": "Master key Budibase uses to manage models.",
+          "required": false
+        },
+        "LITELLM_SALT_KEY": {
+          "defaultValue": "sk-${{secret(48, \"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789\")}}",
+          "description": "Encrypts provider API keys stored in the database. Do not change after first use.",
+          "required": false
+        },
+        "STORE_MODEL_IN_DB": {
+          "defaultValue": "True",
+          "description": "Models configured from Budibase are stored in Postgres.",
+          "required": false
+        },
+        "REDIS_HOST": {
+          "defaultValue": "${{Redis.RAILWAY_PRIVATE_DOMAIN}}",
+          "description": "Redis host.",
+          "required": false
+        },
+        "REDIS_PORT": {
+          "defaultValue": "6379",
+          "description": "Redis port.",
+          "required": false
+        },
+        "REDIS_PASSWORD": {
+          "defaultValue": "${{Redis.REDIS_PASSWORD}}",
+          "description": "Redis password.",
+          "required": false
+        },
+        "LITELLM_CACHE_MODE": {
+          "defaultValue": "default_off",
+          "description": "Response cache is opt-in per request.",
+          "required": false
+        },
+        "LITELLM_MODE": {
+          "defaultValue": "PRODUCTION",
+          "description": "Production mode.",
+          "required": false
+        },
+        "LITELLM_LOG": {
+          "defaultValue": "INFO",
+          "description": "Log level.",
+          "required": false
+        }
+      }
+    },
+    "Postgres": {
+      "icon": "https://devicons.railway.app/i/postgresql.svg",
+      "source": {
+        "image": "ghcr.io/railwayapp-templates/postgres-ssl:18.6@sha256:4fc833b43d2aaf6ecc9b18615f5533602b723a32d0e2efe2dae8ca0f7217c863"
+      },
+      "startCommand": null,
+      "preDeployCommand": null,
+      "healthcheckPath": null,
+      "healthcheckTimeout": null,
+      "restartPolicyType": "ON_FAILURE",
+      "restartPolicyMaxRetries": 10,
+      "numReplicas": 1,
+      "cronSchedule": null,
+      "publicDomain": false,
+      "targetPort": null,
+      "tcpProxy": null,
+      "volume": {
+        "mountPath": "/var/lib/postgresql/data"
+      },
+      "variables": {
+        "PGDATA": {
+          "defaultValue": "/var/lib/postgresql/data/pgdata",
+          "description": "Location where the database will be initialized",
+          "required": false
+        },
+        "PGHOST": {
+          "defaultValue": "${{RAILWAY_PRIVATE_DOMAIN}}",
+          "description": "Railway Private Domain Name.",
+          "required": false
+        },
+        "PGPORT": {
+          "defaultValue": "5432",
+          "description": "Port to connect to Postgres.",
+          "required": false
+        },
+        "PGUSER": {
+          "defaultValue": "${{ POSTGRES_USER }}",
+          "description": "Required variable for Data panel",
+          "required": false
+        },
+        "PGDATABASE": {
+          "defaultValue": "${{POSTGRES_DB}}",
+          "description": "Required variable for the data panel.",
+          "required": false
+        },
+        "PGPASSWORD": {
+          "defaultValue": "${{POSTGRES_PASSWORD}}",
+          "description": "Required variable for Data panel",
+          "required": false
+        },
+        "POSTGRES_DB": {
+          "defaultValue": "railway",
+          "description": "Default database created when image is started.",
+          "required": false
+        },
+        "DATABASE_URL": {
+          "defaultValue": "postgresql://${{PGUSER}}:${{POSTGRES_PASSWORD}}@${{RAILWAY_PRIVATE_DOMAIN}}:5432/${{PGDATABASE}}",
+          "description": "Private connection URL used by Baserow.",
+          "required": false
+        },
+        "POSTGRES_USER": {
+          "defaultValue": "postgres",
+          "description": "User to connect to Postgres DB",
+          "required": false
+        },
+        "SSL_CERT_DAYS": {
+          "defaultValue": "820",
+          "description": "SSL certificate expiry in days.",
+          "required": false
+        },
+        "POSTGRES_PASSWORD": {
+          "defaultValue": "${{ secret(32, \"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ\") }}",
+          "description": "Password to connect to DB",
+          "required": false
+        },
+        "RAILWAY_DEPLOYMENT_DRAINING_SECONDS": {
+          "defaultValue": "60",
+          "description": "Allow Postgres to cleanly shut down",
+          "required": false
+        }
+      }
+    },
+    "Redis": {
+      "icon": "https://cdn.sanity.io/images/sy1jschh/production/0ce0bfdcfbdbf69662b1116671f97c2dd788b655-157x157.svg",
+      "source": {
+        "image": "redis:8.2.11@sha256:b0b01167ff47bc3868e56a967895a26be4230891a1f42a78ab61cdd227accc8d"
+      },
+      "startCommand": "/bin/sh -c \"rm -rf $RAILWAY_VOLUME_MOUNT_PATH/lost+found/ && exec docker-entrypoint.sh redis-server --requirepass $REDIS_PASSWORD --save 60 1 --dir $RAILWAY_VOLUME_MOUNT_PATH\"",
+      "preDeployCommand": null,
+      "healthcheckPath": null,
+      "healthcheckTimeout": null,
+      "restartPolicyType": "ON_FAILURE",
+      "restartPolicyMaxRetries": 10,
+      "numReplicas": 1,
+      "cronSchedule": null,
+      "publicDomain": false,
+      "targetPort": null,
+      "tcpProxy": null,
+      "volume": {
+        "mountPath": "/data"
+      },
+      "variables": {
+        "REDISHOST": {
+          "defaultValue": "${{RAILWAY_PRIVATE_DOMAIN}}",
+          "description": "Private network hostname of the Redis service.",
+          "required": false
+        },
+        "REDISPORT": {
+          "defaultValue": "6379",
+          "description": "Port that Redis listens on.",
+          "required": false
+        },
+        "REDISUSER": {
+          "defaultValue": "default",
+          "description": "Username for authenticating with Redis.",
+          "required": false
+        },
+        "REDIS_PASSWORD": {
+          "defaultValue": "${{ secret(32, \"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ\") }}",
+          "description": "Randomly generated password for authenticating with Redis.",
+          "required": false
+        },
+        "REDISPASSWORD": {
+          "defaultValue": "${{REDIS_PASSWORD}}",
+          "description": "Alias of REDIS_PASSWORD.",
+          "required": false
+        },
+        "REDIS_URL": {
+          "defaultValue": "redis://${{ REDISUSER }}:${{ REDIS_PASSWORD }}@${{ REDISHOST }}:${{ REDISPORT }}",
+          "description": "Private connection URL used by Baserow (cache, websockets, Celery broker).",
+          "required": false
+        }
+      }
+    }
+  }
+}

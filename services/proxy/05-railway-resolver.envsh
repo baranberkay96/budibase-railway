@@ -1,0 +1,13 @@
+#!/bin/sh
+# Sourced by the nginx image entrypoint before the config template is rendered (envsubst).
+# Point nginx at the container's DNS server (Railway private DNS) unless RESOLVER was set by hand.
+if [ -z "${RAILWAY_RESOLVER_OVERRIDE:-}" ]; then
+  ns="$(awk '/^nameserver/ {print $2; exit}' /etc/resolv.conf)"
+  case "$ns" in
+    *:*) ns="[$ns]" ;;
+  esac
+  [ -n "$ns" ] && export RESOLVER="$ns"
+else
+  export RESOLVER="$RAILWAY_RESOLVER_OVERRIDE"
+fi
+echo "[railway-proxy] nginx resolver: ${RESOLVER}"
